@@ -1,0 +1,111 @@
+---
+title: "DATA 607 Homework 2 - Prevalence of Tuberculosis Worldwide (1995 to 2013)"
+author: "Antonio J Bayquen"
+date: "February 13, 2016"
+output: html_document
+---
+
+
+```{r HW2, eval=TRUE, echo=FALSE}
+#install DBI
+#install.packages("RMySQL")
+library(RMySQL)
+
+#connect to MySQL server
+#connect to the tb database
+drv <- dbDriver("MySQL")
+con <- dbConnect(drv, user="root", password = "tara1975", dbname = "tb", 
+                 host = "localhost")
+dbListTables(con)
+dbListFields(con, "tb")
+
+#query tb MySQL database for all TB cases (child, adult and elderly) worldwide
+#query tb database for all cases (child, adult and elderly) worldwide
+query <- "select country, year, child + adult + elderly as cases 
+          from tb
+          where child IS NOT NULL and  adult IS NOT NULL and elderly IS NOT NULL 
+          group by country, year;"  
+tb_cases_country <- dbGetQuery(con, query)
+View(tb_cases_country)
+
+#disconnect from MySQL 
+dbDisconnect(con) 
+dbUnloadDriver(drv)
+
+#load population csv (make sure it is in the current directory)
+getwd()
+world_pop <- read.csv("population.csv", header = TRUE)
+View(world_pop)
+
+#perform a left outer join of the tb data frame and the world population dataframe;
+#join on country and year (we know this is unique for the tb df because of the group by SQL)
+library(plyr)
+tb_all <- join(tb_cases_country, world_pop, by = c("country", "year"), type = "left", match = "all")
+
+#make sure there are no duplicate records on the world population dataframe
+nrow(tb_cases_country) == nrow(tb_all)
+nrow(tb_all)
+
+#compute for the rate and add new column to combined dataframe
+tb_all$rate = tb_all$cases/tb_all$population
+```
+
+get the summary statistics for combined TB-World Population dataframe
+```{r HW2-summ, eval=TRUE, echo=FALSE}
+summary(tb_all)
+
+#get a subset of the combined (tb-world population) dataframe
+tb_subset <- subset(tb_all, select=c("country", "year", "rate"))
+tb_subset_AG <- subset(tb_all, substring(country,1,1) >= "A" & substring(country,1,1) < "H", select=c("country", "year", "rate"))
+tb_subset_HN <- subset(tb_all, substring(country,1,1) >= "H" & substring(country,1,1) < "O", select=c("country", "year", "rate"))
+tb_subset_OZ <- subset(tb_all, substring(country,1,1) >= "O", select=c("country", "year", "rate"))
+
+#show a barchart of rate of TB per country for all years that complete data was recorded
+library(lattice)
+barchart(rate~country,main="Turberculosis Rates by Country from 1995 to 2013 (Countries A through G)",data=tb_subset_AG,groups=year,scales=list(x=list(rot=90,cex=0.8)))
+
+barchart(rate~country,data=tb_subset_HN,groups=year,main="Turberculosis Rates by Country from 1995 to 2013 (Countries H through N)",scales=list(x=list(rot=90,cex=0.8)))
+
+barchart(rate~country,data=tb_subset_OZ,groups=year,main="Turberculosis Rates by Country from 1995 to 2013 (Countries O through Z)",scales=list(x=list(rot=90,cex=0.8)))
+
+boxplot(tb_subset$rate ~ tb_subset$year)
+
+#get a subset of the combined (tb-world population) df for the last recorded year - 2013
+tb_cnty_2013 <- subset(tb_subset, year == 2013, select=c("country", "rate"))
+
+#rank the countries from highest to lowest TB rates
+tb_cnty_2013 <- arrange(tb_cnty_2013,-rate) 
+
+```
+
+ 
+Most of the 88 countries show a flat TB rate for the periods 1995 to 2013 (1/100,000 to 5/100,000 prevalence rates). However, for about 15 to 20 countries, there is a upward trend during this period in the prevalence of TB (1/500 to 1/1,000 in 2013). Because of these outliers, the median and mean for world TB Most of these relatively high prevalence countries are in southern Africa such as South Africa, Swaziland, Nambia, Lesotho and Botswana. North Korea and Haiti also have a relatively high rate. These relatively high TB rates, may be reflective of the current political and socio-economic conditions in these countries. As TB is a contagious disease - agravating factors such as malnutrition and unsanitary living conditions may be contributing to the rise (or resurgence) of TB in these countries. Also, specially for countries in southern Africa, the AIDS epidemics there may be another reason for the upward trend.
+
+
+Ranking of countries by prevalence TB (for 2013) in descending order. 
+Note that the U.S. is last - reflective of America's superior health care system and how it is able to keep a contigious disease in check
+```{r HW2-rank, eval=TRUE, echo=FALSE}
+tb_cnty_2013$country
+plot(tb_cnty_2013$rate, main="Turberculosis Rate by Country for 2013", xlab="Country", ylab="Rate")
+```
+
+
+2013 TB Rate Top Ten and Bottom Ten Countries
+```{r HW2-rank-2013, eval=TRUE, echo=FALSE}
+#show the top ten countries with the highest TB rate worldwide
+x<-head(tb_cnty_2013,10)
+x
+barchart(rate~country,data=x,main="Countries with the Highest Tuberculosis Rate (2013)",scales=list(x=list(rot=90,cex=0.8)))
+#barplot(head(tb_cnty_2013$rate,10), main="Countries with the Highest Tuberculosis Rate #(2013)", xlab="Country", ylab="Rate", names.arg=c(1:10), col=c("red"))
+
+#show the bottom ten countries with the lowest TB rate worldwide
+y<-tail(tb_cnty_2013,10)
+y
+barchart(rate~country,data=y,main="Countries with the Lowest Tuberculosis Rate (2013)",scales=list(x=list(rot=90,cex=0.8)))
+#barplot(head(tb_cnty_2013$rate,10), main="Countries with the Lowest Tuberculosis Rate #(2013)", xlab="Country", ylab="Rate", names.arg=c(1:10), col=c("blue"))
+
+```
+ 
+
+
+

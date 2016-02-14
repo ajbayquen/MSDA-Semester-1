@@ -58,6 +58,10 @@ tmp <- as.character(newdata2$Type)
 tmp[rowid == TRUE] <- "NOT-TIED"
 newdata2$Type <- factor(tmp)
 
+#eliminate all rows with missing data
+newdata4 <- (newdata2$Identifier == "?" || newdata2$River == "?" || newdata2$Purpose == "?" || newdata2$Length == "?" || newdata2$Lanes == "?" ||  newdata2$Material == "?" || newdata2$Span == "?" || newdata2$Type == "?") 
+
+
 #write transformed Pittsburgh-Bridges dataset to a a csv file
 write.csv(newdata2, file='PittBrid.csv')		
 	
