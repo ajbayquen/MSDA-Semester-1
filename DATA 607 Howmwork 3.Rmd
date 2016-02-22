@@ -1,0 +1,94 @@
+---
+title: "Data 607 HW 3 - Regular Expressions"
+author: "Antonio J Bayquen"
+date: "February 21, 2016"
+output: html_document
+---
+#####
+**3. Copy the introductory example. The vector name stores the extracted name.** 
+```{r, eval=TRUE}
+
+library(stringr)
+#input the raw data
+raw.data <- "555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+
+#list the vector names from the raw data
+name
+
+```
+
+**(a) Use the tools of this chapter to rearrange the vector so that all elements conform to the standard first_name last_name.**
+
+```{r, eval=TRUE}
+
+#split the name list by the "," delimiter
+#only names with last name, first name format will be split
+#names with first name - last name format will be untouched 
+sp_name<-str_split(name,",")
+sp_name
+```
+
+#####**reverse the list entries with last name, first name format 
+so first name comes first**
+```{r, eval=TRUE}
+for (i in 1:length(sp_name)){
+  if (length(sp_name[[i]]) > 1) {
+    temp <- sp_name[[i]][1]
+    sp_name[[i]][1] <- sp_name[[i]][2]
+    sp_name[[i]][2] <- temp
+  }
+}
+sp_name
+```
+
+**(b) Construct a logical vector indicating whether a character has a title (i.e., Rev. and Dr.).**
+
+```{r, eval=TRUE}
+title_name <- str_detect(name,"Rev.|Dr.|Mr.|Ms.|Mrs.")
+comb_list <- data.frame (name, title_name)
+comb_list
+```
+
+**(c) Construct a logical vector indicating whether a character has a second name**
+
+```{r, eval=TRUE}
+mid_name <- str_detect(name," [A-Z]\\.")
+comb_list2 <- data.frame (name, mid_name)
+comb_list2
+```
+
+**7. Consider the string <title>+++BREAKING NEWS+++</title>. We would like to extract the first HTML tag. To do so we write the regular expression <.+>. Explain why this fails and correct the expression.**
+
+```{r, eval=TRUE}
+tag1 <- "<title>+++BREAKING NEWS+++</title>"
+
+#using the wrong regex <.+>
+# this regex will pick up the entire string since it will pick-up
+# the second ">" (Greedy quantification)
+wrong_tag <- str_extract(tag1,"<.+>")
+wrong_tag
+#to prevent this from happening, we use the
+#the regex below
+
+right_tag <- str_extract(tag1,"<[[:alpha:]]+>")
+right_tag
+```                                                                                     
+
+**8. Consider the string (5-3)^2=5^2-2*5*3+3^2 conforms to the binomial theorem. We would like to extract the formula in the string. To do so we write the regular expression [^0-9=+*()]+. Explain why this fails and correct the expression.**
+
+```{r, eval=TRUE}
+
+#assign formula to string variable
+bi_for <- "(5-3)^2=5^2-2*5*3+3^2"
+
+#wrong formula used
+#the ^ sign and the - sign are special signs in regex 
+#they must be preceeded by escape characters \\
+wrong_formula <- str_extract(bi_for, "[^0-9=+*()]+")
+wrong_formula
+#the righ formula with escpae characters
+#digits where also converted to \\d instead of using 0-9
+right_formula <- str_extract(bi_for, "[\\-\\^\\d=+*()]+")
+right_formula
+```    
