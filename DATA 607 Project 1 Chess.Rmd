@@ -1,0 +1,104 @@
+---
+title: "Data 607 Project 1"
+author: "Antonio J Bayquen"
+date: "February 28, 2016"
+output: html_document
+---
+
+###Project 1 - Chess Tournament Information (Extract, Transform, Load)
+
+**Make sure tournamentinfo.txt is in the current directory. This text file will be loaded from the current directory**
+```{r load-txt, eval=TRUE}
+setwd("~/")
+tinfo_ext <- read.table("tournamentinfo.txt", header=F, sep="|", as.is = TRUE, skip=4,fill=TRUE)
+```
+
+**Check what was loaded to the dataframe**
+```{r check-txt, eval=TRUE}
+tinfo_ext
+```
+
+**Clean extract - drop unnecessary rows and columns**
+```{r clean-txt, eval=TRUE}
+#drop extraneous column
+tinfo_ext$V11 <- NULL
+#split datafrme into 2 (player info and state/rating info)
+tinfo_players <- subset(tinfo_ext, as.numeric(rownames(tinfo_ext))%%3 == 1)
+tinfo_st_rate <- subset(tinfo_ext, as.numeric(rownames(tinfo_ext))%%3 == 2)
+#make sure player and state/rating dataframes have the same number of rows
+#because the second one is an extension of the first
+nrow(tinfo_st_rate)
+nrow(tinfo_players)
+```
+
+**Check split dataframes for data of interest**
+```{r check-split, eval=TRUE}
+tinfo_st_rate
+tinfo_players
+```
+
+**Give more descriptive names to dataframe column names**
+```{r column-rename, eval=TRUE}
+library(plyr)
+#rename df columns
+t_pl <- rename(tinfo_players, c("V1"="Rank", "V2"="Player", "V3"="Points", "V4"="Round_1", "V5"="Round_2", "V6"="Round_3", "V7"="Round_4", "V8"="Round_5", "V9"="Round_6", "V10"="Round_7"))
+t_pl
+#drop unnecessary columns
+tinfo_st_rate <- subset(tinfo_st_rate, select=c(V1,V2))
+#rename df columns
+t_sr <- rename(tinfo_st_rate, c("V1"="State", "V2"="Rating"))
+t_sr
+#list new df names
+names(t_pl)
+names(t_sr)
+```
+
+
+**Further clean data from columns extracting only data of interest**
+```{r clean-more, eval=TRUE}
+library(stringr)
+#extract only the pre-rating number from its set position 
+t_sr$Rating <- substr(t_sr$Rating, 16, 19)
+t_sr$Rating
+```
+
+**Pick only the player's opponent pre-tour rating (numeric field) from the round (1-7) columns**
+```{r clean-some-more, eval=TRUE}
+t_pl$Round_1 <- unlist(str_extract(t_pl$Round_1, "\\d+"))
+t_pl$Round_2 <- unlist(str_extract(t_pl$Round_2, "\\d+"))
+t_pl$Round_3 <- unlist(str_extract(t_pl$Round_3, "\\d+"))
+t_pl$Round_4 <- unlist(str_extract(t_pl$Round_4, "\\d+"))
+t_pl$Round_5 <- unlist(str_extract(t_pl$Round_5, "\\d+"))
+t_pl$Round_6 <- unlist(str_extract(t_pl$Round_6, "\\d+"))
+t_pl$Round_7 <- unlist(str_extract(t_pl$Round_7, "\\d+"))
+t_pl
+```
+
+**Append opponent's pre-tour rating (for all 7 rounds) to the player's state/pre-rating dataframe**
+```{r append-rate, eval=TRUE}
+t_sr$ORa_R1 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_1)])
+t_sr$ORa_R2 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_2)])
+t_sr$ORa_R3 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_3)])
+t_sr$ORa_R4 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_4)])
+t_sr$ORa_R5 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_5)])
+t_sr$ORa_R6 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_6)])
+t_sr$ORa_R7 <- as.numeric(t_sr$Rating[as.numeric(t_pl$Round_7)])
+t_sr
+```
+
+**compute average opponent rating (for all 7 rounds) and add as new column in the state/pre-rating dataframe**
+```{r ave-rate, eval=TRUE}
+t_sr$ORa_Ave <- round(rowMeans(subset(t_sr, select = c(3, 4, 5, 6, 7, 8, 9)), na.rm = TRUE))
+t_sr
+```
+
+**combine selected columns from the player info and state/pre-rating dataframes to produce the dataframe that contains only the data of interest**
+```{r combine-df, eval=TRUE}
+tinfo_out<-data.frame(Player=t_pl$Player, State=t_sr$State, Points=t_pl$Points, "Pre-Tour Rating"=t_sr$Rating,"Opp Pre-Tour Rating"=t_sr$ORa_Ave)
+tinfo_out
+```
+
+**output dataframe to a csv file**
+```{r output-csv, eval=TRUE}
+write.csv(tinfo_out, file="tinfo.csv")
+```
