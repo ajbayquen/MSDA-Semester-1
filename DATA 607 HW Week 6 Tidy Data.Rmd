@@ -1,0 +1,131 @@
+---
+title: "DATA 607 HW Week 6 - Tidy Data"
+author: "Antonio J Bayquen"
+date: "March 6, 2016"
+output: html_document
+---
+
+**Load the relevant libraries**
+```{r load-libs, eval=TRUE}
+#make sure the Wickham libraries are loaded
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+**Read CSV File**
+```{r read-file, eval=TRUE}
+#current directory
+setwd("~/")
+#read the csv file
+flt_del <- read.csv("flight_delays.csv", header=T, stringsAsFactors = F)
+#list the dataframe
+flt_del
+```
+
+**Tidy the dataframe**
+```{r tidy-data, eval=TRUE}
+
+flt_del$X[2] = flt_del$X[1]
+flt_del$X[4] = flt_del$X[3]
+
+flt_tidy <- gather(flt_del,"City","Flights", 3:7)
+
+flt_tidy
+```
+
+**Group data and summarize results of groupings **
+
+```{r summ-data-1, eval=TRUE}
+#Group data by City(Airport) and Airline and get the total flights (on time and delayed) per group
+flt_sum1 <- flt_tidy %>% group_by(City,X) %>% summarise(flt_sum1 = sum(Flights))
+
+#Group data by City(Airport) and get the total flights (on time and delayed) per group (City)
+flt_sum2 <- flt_tidy %>% group_by(City) %>% summarise(flt_sum2 = sum(Flights))
+
+#Group data by Airline and get the total flights (on time and delayed) per group Airline
+flt_sum7 <- flt_tidy %>% group_by(X) %>% summarise(flt_sum7 = sum(Flights))
+
+```
+
+
+**Results show that about 75% of all the flights (in terms of the 5 airports listed) for American West are in Phoenix. For Alaska, most of its flights are in Seattle (about 55%)  - which is not as proportionately large as American West.**
+
+```{r flts-per-city, eval=TRUE}
+
+#Combine the 2 summaries using a join
+flt_com1 <- inner_join(flt_sum1, flt_sum7, by="X")
+
+#Relative Percentage of flight between Alaska and American West per city
+flt_com1 %>% mutate(per_cit = round(flt_sum1/flt_sum7,2)) %>% select(City, X, per_cit)
+
+#generate bar plot to show relative share for Alaska and American West per City
+ggplot(flt_com1, aes(x = X, y=round((flt_sum1/flt_sum7),2), fill = City)) +  geom_bar(stat="identity",position="dodge") + xlab("Airlines") + ylab("Percentage of Flights per City") 
+
+```
+
+
+**Find the market share (in terms of number of flights) of Alaska and American West Relative to each other in the Aiports on the dataframe list.**
+**While American West has a much stronger presence in southern cities such as Phoenix and San Diego, Alaska dominates American West in Seattle. It is a much closer competition for the 2 airlines in San Francisco and Los Angeles**
+
+```{r mkt-shr, eval=TRUE}
+
+#Combine the 2 summaries using a join
+flt_com <- inner_join(flt_sum1, flt_sum2, by="City")
+
+#Relative market share between Alaska and American West
+flt_com %>% mutate(mkt_shr = round(flt_sum1/flt_sum2,2)) %>% select(City, X, mkt_shr)
+
+#generate bar plot to show relative share for Alaska and American West per City
+ggplot(flt_com, aes(x = X, y=round((flt_sum1/flt_sum2),2), fill = City)) +  geom_bar(stat="identity",position="dodge") + xlab("Airlines") + ylab("Market Shares (Relative to each other)") 
+
+```
+
+
+**Compare the delays/on time record in the five cities listed for the 2 airlines.
+Alaska Airlines has a better on time arrival records when compared to American West for all the 5 cities (airports)**
+
+```{r delays-1, eval=TRUE}
+flt_com_del <- inner_join(flt_tidy, flt_sum1, by=c("City","X"))
+
+#determine the percentage of flights that are on time and delayed per City per Airline
+flt_com_del %>% mutate(del_per = round(Flights/flt_sum1,2)) %>% select(City, X, X.1, del_per)
+
+#show percentage of delayed/on time flights in Los Angeles for the 2 airlines
+flt_LA = filter(flt_com_del, City=="Los.Angeles")
+ggplot(flt_LA, aes(x = X, y=round((Flights/flt_sum1),2), fill = X.1)) +  geom_bar(stat="identity", position="dodge") + xlab("Airlines") + ylab("Percentage Delayed/On Time(Los Angeles)")
+                                                                                                                                               
+#show percentage of delayed/on time flights in Phoenix for the 2 airlines
+flt_Ph = filter(flt_com_del, City=="Phoenix")
+ggplot(flt_Ph, aes(x = X, y=round((Flights/flt_sum1),2), fill = X.1)) +  geom_bar(stat="identity", position="dodge") + xlab("Airlines") + ylab("Percentage Delayed/On Time(Phoenix)")                                                                                                                                            #show percentage of delayed/on time flights in San Diego for the 2 airlines
+flt_Ph = filter(flt_com_del, City=="San.Diego")
+ggplot(flt_Ph, aes(x = X, y=round((Flights/flt_sum1),2), fill = X.1)) +  geom_bar(stat="identity", position="dodge") + xlab("Airlines") + ylab("Percentage Delayed/On Time(San Diego)")
+
+#show percentage of delayed/on time flights in San Francisco for the 2 airlines
+flt_Ph = filter(flt_com_del, City=="San.Francisco")
+ggplot(flt_Ph, aes(x = X, y=round((Flights/flt_sum1),2), fill = X.1)) +  geom_bar(stat="identity", position="dodge") + xlab("Airlines") + ylab("Percentage Delayed/On Time(San Francisco)")
+
+#show percentage of delayed/on time flights in Seattle for the 2 airlines
+flt_Ph = filter(flt_com_del, City=="Seattle")
+ggplot(flt_Ph, aes(x = X, y=round((Flights/flt_sum1),2), fill = X.1)) +  geom_bar(stat="identity", position="dodge") + xlab("Airlines") + ylab("Percentage Delayed/On Time(Seattle)")
+```
+
+
+**Although Alaska beat American West in all the 5 cities in the list, overall (for the all the flights arriving the 5 cities), American West has a better record. This can be attributed to the fact that the majority of American West's flights are in its hub in Phoenix (75%) where it has a excellent on time record (so does Alaska but it has a lot less flights to Phoenix). This disproportionately large percentage more than made up for a less stellar record in the other 4 airports. This is the reason why American West has the overall better record inspite of losing to Alaska in all the 5 airports in terms of on time record**
+
+```{r total-delays, eval=TRUE}
+#group flights by airline and on-time/delay status and sum the grouping
+flt_sum3 <- flt_tidy %>% group_by(X,X.1) %>% summarise(flt_sum3 = sum(Flights))
+
+#from the summary group abouve, group this by airline and sum the grouping
+flt_sum4 <- flt_sum3 %>% group_by(X) %>% summarise(flt_sum4 = sum(flt_sum3))
+
+#join the the 2 summary groupings
+flt_todel <- inner_join(flt_sum3, flt_sum4, by=("X"))
+
+#determine the overall delay/on time record for the 2 airlines
+mutate(flt_todel, del_all = round(flt_sum3/flt_sum4,2)) %>% select(X, X.1,del_all)
+
+#show the overall delay/on time record for the 2 airlines
+ggplot(flt_todel, aes(x = X, y=round((flt_sum3/flt_sum4),2), fill = X.1)) +  geom_bar(stat="identity") + xlab("Airlines") + ylab("Overall Percentage of Delayed Flights") 
+```
