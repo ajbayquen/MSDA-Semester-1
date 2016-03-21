@@ -1,0 +1,31 @@
+{"books" : [
+    {
+	  "title" : "R for Everyone",
+      "authors" : "Jared P. Lander",
+      "publisher" : "Addison Wesley",
+      "copyright" : 2014
+     },
+	 {
+	  "title" : "Automated Data Collection with R",
+      "authors" : ["Simon Munzert", "Christian Rubba", "Peter Meibner", "Dominic Nyhuis"],
+      "publisher" : "Wiley",
+      "copyright" : 2015
+      },
+      { 	  
+	  "title" : "The Art of R Programming",
+      "authors" : "Norman Matloff",
+      "publisher" : "No Starch Press",
+      "copyright" : 2011
+	  }
+	  ]
+	}
+      	 
+	  
+	  
+	 	 	
+	  
+	  
+	  
+	  
+	  
+	 	  

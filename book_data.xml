@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<r_books>
+   <book id="1">
+      <title>R for Everyone</title>
+      <authors>
+        <coauthor>Jared P. Lander</coauthor>
+      </authors>
+      <publisher>Addison Wesley</publisher>
+      <copyright>2014</copyright>	  
+   </book>
+   <book id="2">
+      <title>Automated Data Collection with R</title> 
+      <authors>
+	     <coauthor>Simon Munzert</coauthor> 
+         <coauthor>Christian Rubba</coauthor> 
+		 <coauthor>Peter Meibner</coauthor> 
+		 <coauthor>Dominic Nyhuis</coauthor>
+      </authors>
+	  <publisher>Wiley</publisher>
+	  <copyright>2015</copyright>	
+   </book>
+   <book id="3">
+      <title>The Art of R Programming</title> 
+      <authors>
+	     <coauthor>Norman Matloff</coauthor> 
+      </authors>
+	  <publisher>No Starch Press</publisher>
+	  <copyright>2011</copyright>	
+   </book>
+</r_books>
