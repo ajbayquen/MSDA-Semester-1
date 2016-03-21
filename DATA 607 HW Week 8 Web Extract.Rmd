@@ -1,0 +1,46 @@
+---
+title: "DATA 607 HW Week 8"
+author: "Antonio J Bayquen"
+date: "March 20, 2016"
+output: html_document
+---
+<span style="color:blue">
+###Load libraries
+</span>
+```{r, eval=T}
+library(RCurl)
+library(XML)
+library(plyr)
+setwd("~/")
+```
+
+
+
+<span style="color:blue">
+###Load HTML table for online Github repository
+</span>
+```{r1, eval=T}
+book_html = readHTMLTable("book_data.html")
+book_html.df = as.data.frame(book_html)
+book_html.df
+```
+
+<span style="color:blue">
+###Load XML table for online Github repository
+</span>
+```{r2, eval=F}
+book_xml = "book_data.xml"
+book_xml.df = ldply(xmlToList("book_data.xml"), data.frame)
+book_xml.df
+```
+
+<span style="color:blue">
+###Load JSON table for online Github repository
+</span>
+```{r3, eval=F}
+require(RJSONIO)
+booksj = fromJSON("book_data.json", nullValue = NA, simplify = FALSE)
+booksj
+booksj.df = do.call("rbind", lapply(booksj, data.frame, stringAsFactors = FALSE))
+booksj.df
+```
