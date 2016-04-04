@@ -1,0 +1,60 @@
+---
+title: "Data 607  Week Ten Working With Web APIs"
+author: "Antonio J Bayquen"
+date: "April 3, 2016"
+output: html_document
+---
+
+####Include all library needed to process New York Times extract requests
+
+```{r}
+require(RCurl)
+require(RJSONIO)
+```
+
+
+####Process New York Times article request using API
+####Search for articles containing "Jayhawks"
+
+```{r}
+kjwks = getURL("http://api.nytimes.com/svc/search/v2/articlesearch.json?q=Kansas+Jayhawks&fq=news_desk:(Sports)&api-key=15678527aef4c5ccc4685b874cd3bae9:2:74898837")
+
+#convert JSON format to r list 
+l_kjwks = fromJSON(kjwks, nullvalue=NA)
+
+#view structure of list
+str(l_kjwks)
+
+#examine list structure
+l_kjwks$response[1:2]
+l_kjwks$response$docs[2]
+l_kjwks$response$docs[[1]][1:2]
+
+#take out the meta data from the list                      
+ldocs_kjwks <- l_kjwks$response$docs
+
+#view structure of list (without metadata)
+str(ldocs_kjwks)
+
+#convert JSON list structure to a dataframe
+kjwks_df <- data.frame(t(sapply(ldocs_kjwks,c)))
+
+#view structure of dataframe
+str(kjwks_df)
+
+dim(kjwks_df)
+names(kjwks_df)
+
+head(kjwks_df[1:4],5)
+tail(kjwks_df[1:4],2)
+
+head(kjwks_df[c(2,3)],2)
+
+```
+
+ 
+
+
+
+
+
