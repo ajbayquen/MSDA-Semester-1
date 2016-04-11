@@ -1,0 +1,201 @@
+---
+title: "Data 607 Week 11 HW Text Mining"
+author: "Antonio J Bayquen"
+date: "April 10, 2016"
+output: 
+  html_document:
+    theme: united
+    highlight: tango
+    toc: true
+    toc_float: true
+    toc_depth: 4
+    number_sections: true
+---
+
+#Source and Reference#
+
+   1. Automated Data Collection With R, Chapter 10, S. Munzert, C. Rubba, et. al.  
+
+#Include R libraries#
+
+```{r, warning=FALSE}
+library(tm)
+library(stringr)
+library(SnowballC)
+library(RTextTools)
+```
+
+#Create Text Corpus For Both Ham and Spam Files (Emails)# 
+
+The spam and ham files were downloaded, and unzipped from <https://spamassassin.apache.org/publiccorpus/.>
+
+```{r}
+setwd("C:/data")
+pathToHam = "easy_ham"
+pathToSpam = "spam_2"
+
+corpusHam <- Corpus((DirSource(directory=pathToHam, pattern="\\d+")), 
+    readerControl = list(reader = readPlain))
+
+length(corpusHam)
+
+
+corpusSpam <- Corpus((DirSource(directory=pathToSpam, pattern="\\d+")), 
+    readerControl = list(reader = readPlain))
+
+length(corpusSpam)
+
+```
+
+
+#Create Meta Tag "emailtype"#
+
+Diffentiate email files and combine the 2 corpuses (ham and spam emails)
+    
+```{r}
+meta(corpusHam, tag="emailtype") = "Ham"
+
+meta(corpusSpam, tag="emailtype") = "Spam"
+
+corpusHS = c(corpusHam, corpusSpam)
+
+length(corpusHS)
+
+```
+
+
+#Transform Corpus To A Term Document Matrix#
+
+Perform text mapping cleansing techiques
+
+```{r}
+
+##HS_tdm = TermDocumentMatrix(corpusHS)
+##HS_tdm 
+
+corpusHS = tm_map(corpusHS, removeNumbers)
+
+##HS_tdm = TermDocumentMatrix(corpusHS)
+##HS_tdm 
+
+corpusHS = tm_map(corpusHS, str_replace_all, pattern="[[:punct:]]", replacement=" ")
+
+##HS_tdm = TermDocumentMatrix(corpusHS)
+##HS_tdm 
+
+corpusHS = tm_map(corpusHS, removeWords, words=stopwords("en"))
+
+##HS_tdm = TermDocumentMatrix(corpusHS)
+##HS_tdm 
+
+corpusHS = tm_map(corpusHS, tolower)
+
+corpusHS = tm_map(corpusHS, stemDocument)
+
+#HS_tdm = TermDocumentMatrix(corpusHS, PlainTextDocument)
+##HS_tdm 
+
+
+##HS_tdm = removeSparseTerms(HS_tdm, 1-(10/length(corpusHS)))
+##HS_tdm 
+
+```
+
+#Transform Corpus To A Document Term Matrix#
+
+Perform text mapping cleansing techiques
+
+```{r}
+corpusHS <- tm_map(corpusHS, PlainTextDocument)
+
+corpusHSR = sample(corpusHS)
+
+HS_dtm = DocumentTermMatrix(corpusHSR)
+##HS_dtm 
+
+HS_dtm = removeSparseTerms(HS_dtm, 1-(10/length(corpusHSR)))
+HS_dtm 
+
+
+```
+
+
+#Create A Container From The Document Text Matrix#
+
+Divide the corpus into training and test datasets. Create training models for classification algorithms. In addition, create corresponding test datasets for each of the classification algorithms.
+
+```{r}
+head(meta(corpusHSR))
+
+HS_labels <- as.factor(unlist(meta(corpusHSR, "emailtype")[,1]))
+
+class(HS_labels)
+
+N = nrow(meta(corpusHSR))
+
+container = create_container(HS_dtm, labels=HS_labels, trainSize = 1:3000, testSize = 3001:N, virgin = FALSE)
+
+slotNames(container)
+
+svm_model = train_model(container, "SVM")
+tree_model = train_model(container, "TREE")
+maxent_model = train_model(container, "MAXENT")
+boost_model = train_model(container, "BOOSTING")
+##bagg_model = train_model(container, "BAGGING")
+##nnet_model = train_model(container, "NNET")
+
+svm_out = classify_model(container, svm_model)
+tree_out = classify_model(container, tree_model)
+maxent_out = classify_model(container, maxent_model)
+boost_out = classify_model(container, boost_model)
+##bagg_out = classify_model(container, bagg_model)
+##nnet_out = classify_model(container, nnet_model)
+
+```
+
+#Analyze Results For The Classification Algorithms#
+
+Determine which of the classification algorithm is the most accurate
+
+```{r}
+head(svm_out)
+head(tree_out)
+head(maxent_out)
+head(boost_out)
+labels_out = data.frame(correct_label =  HS_labels[3001:N],
+                       svm = as.character(svm_out[,1]),
+                       tree = as.character(tree_out[,1]),
+                       maxent = as.character(maxent_out[,1]),
+                       boost= as.character(boost_out[,1]),
+                       stringsAsFactors = F)
+
+```
+
+
+##SVM Performance##
+```{r}
+table(labels_out[,1] == labels_out[,2])
+prop.table(table(labels_out[,1] == labels_out[,2]))
+```
+
+##Random Forest Performance##
+```{r}
+table(labels_out[,1] == labels_out[,3])
+prop.table(table(labels_out[,1] == labels_out[,3]))
+```
+
+##Maximum Entropy Performance##
+```{r}
+table(labels_out[,1] == labels_out[,4])
+prop.table(table(labels_out[,1] == labels_out[,4]))
+```
+
+##Boosting Performance##
+```{r}
+table(labels_out[,1] == labels_out[,5])
+prop.table(table(labels_out[,1] == labels_out[,5]))
+```
+
+#Conclusion#
+
+All 4 supervised machine learning algorithms performed well for the given training and testing datasets. The Boosting Algorithm performed best matching all but 1 test email correctly. The SVM and Maximum Entrophy algorithms misclassified only 5 of 896 test   emails while the Random Forest algorithm was wrost as it misclassified 15 of the 896 emails.
